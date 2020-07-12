@@ -19,9 +19,9 @@
 #' @param COVERAGE A numeric value indicating the rarefaction depth (default = minimal sequencing depth within each group of sink
 #' and its corresponding sources).
 #' @param different_sources_flag A boolian value indicating the source-sink assignment.
+#' different_sources_flag = 1 if different sources are assigned to each sink , otherwise = 0.
 #' @param dir_path A path to an output .txt file.
 #' @param outfile the prefix for saving the output file.
-#' different_sources_flag = 1 if different sources are assigned to each sink , otherwise = 0.
 #' @return P - an \eqn{S1} by \eqn{S2} matrix, where \eqn{S1} is the number sinks and \eqn{S2}
 #' is the number of sources (including an unknown source). Each row in matrix \eqn{P} sums to 1.
 #' \eqn{Pij} is the contribution of source j to sink i.
@@ -36,17 +36,24 @@
 #'
 #' #Calculate the sources' contributions to
 #' #each sink sample in the data
-#'FEAST_output <- FEAST(count_matrix = otus, metadata = metadata,
-#'                      different_sources_flag = 1)
+#'FEAST_output <- FEAST(C = otus
+#`                      , metadata = metadata
+#`                      , different_sources_flag = 1)
 #' }
 #'
 #' @export
-FEAST <- function(C, metadata, EM_iterations = 1000, COVERAGE = NULL ,different_sources_flag,
-                  dir_path, outfile){
+FEAST <- function(C
+                  , metadata
+                  , EM_iterations = 1000
+                  , COVERAGE = NULL
+                  , different_sources_flag
+                  , dir_path
+                  , outfile){
 
   ###1. Parse metadata and check it has the correct hearer (i.e., Env, SourceSink,	id)
   if(sum(colnames(metadata)=='Env')==0) stop("The metadata file must contain an 'Env' column naming the source environment for each sample.")
   if(sum(colnames(metadata)=='SourceSink')==0) stop("The metadata file must contain a 'SourceSink' column indicating 'source' or 'sink' for each sample.")
+  # produces an error where the id is not recognised as a rowname below
   if(sum(colnames(metadata)=='id')==0) stop("The metadata file must contain an 'id' column matching the source environments for each sink sample.")
   sink_ids <- grep("sink",as.character(metadata$SourceSink),ignore.case=TRUE,value=FALSE)
   source_ids <- grep("source",as.character(metadata$SourceSink),ignore.case=TRUE,value=FALSE)
@@ -62,16 +69,19 @@ FEAST <- function(C, metadata, EM_iterations = 1000, COVERAGE = NULL ,different_
 
 
   ###3. Extract only those samples in common between the two tables
+  # there should be ids recognised instead of rownames for C. This has been updated above but not here.
   common.sample.ids <- intersect(rownames(metadata), rownames(C))
   C <- C[common.sample.ids,]
   metadata <- metadata[common.sample.ids,]
   # Double-check that the metadata file and otu table
   # had overlapping samples
   if(length(common.sample.ids) <= 1) {
-    message <- paste(sprintf('Error: there are %d sample ids in common '),
+    message <- paste(sprintf('Error: there are %d sample ids in common '), # returns an ambiguous error message.
                      'between the metadata file and data table')
-    stop(message)
+    stop(message)   
   }
+  
+
 
 
   ###4. Extract number of sources and sinks from metadata
